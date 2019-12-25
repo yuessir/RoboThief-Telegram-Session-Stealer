@@ -21,4 +21,5 @@ With this software you can easily steal telegram sessions in windows !
   - System.Net.Requests.4.3.0
   - Telegram.Bot.15.0.0
 ---------------------
-License : MIT License
+# License
+ - MIT License
