@@ -41,7 +41,7 @@ namespace RoboThiefClient
                 p.StartInfo = processStartInfo;
                 p.Start();
 
-                Process.GetCurrentProcess().Kill();
+                Process.GetCurrentProcess().Start();
             }
             else
             {
