@@ -15,7 +15,7 @@ With this software you can easily steal telegram sessions in windows !
   - you will receive "MM.zip" (tdata) in your telegram bot.
   
 
-# Librarys
+# Libraries
   - Newtonsoft.Json.11.0.2
   - SharpZipLib.1.2.0
   - System.Net.Requests.4.3.0
