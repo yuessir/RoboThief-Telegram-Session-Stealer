@@ -1,3 +1,7 @@
+# MOD Description
+
+base on Robo Thief version & https://github.com/EternalC0der/TeleShadow3
+
 # Description
 
 Robo Thief is a software for steal telegram session .

